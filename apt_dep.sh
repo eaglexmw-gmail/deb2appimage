@@ -1,4 +1,10 @@
 #! /bin/bash
+# Title: apt_dep
+# Author: eaglexmw
+# License: MIT
+# Description: get apt depends package info from apt-cache
+# Dependencies: apt-cache grep awk tr
+# Examples: apt_dep.sh pkgname
 
 SKIP_DEP=libc6
 ALL_DEBS=$1

@@ -1,4 +1,10 @@
 #! /bin/bash
+# Title: apt_release
+# Author: eaglexmw
+# License: MIT
+# Description: get apt package release info from apt-cache
+# Dependencies: apt-cache grep awk sed
+# Examples: apt_release.sh pkgname1,pkgname2,pkgname3
 
 DEBS_RELEASE=
 

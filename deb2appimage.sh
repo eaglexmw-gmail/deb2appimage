@@ -130,8 +130,16 @@ function getlatestdeb() {
             ;;
     esac
     # find latest deb url using grep and head -n 1
-    LATEST_DEB_URL="$(curl -sL "https://packages.$DEB_DISTRO_URL/$DEB_RELEASE/$DEB_ARCH/$DEB_NAME/download" | grep "<li>*..*$DEB_ARCH.deb" | cut -f2 -d'"' | head -n 1)"
-    curl -sL "$LATEST_DEB_URL" -o "$HOME"/.cache/deb2appimage/debs/"$DEB_NAME".deb || d2aexit 3 "$DEB_NAME.deb" "URL: $LATEST_DEB_URL"
+    if [[ "$D2A_MIRROR" = "TRUE" ]]; then
+        LOWER_DEB_DISTRO="$(echo $DEB_DISTRO | tr A-Z a-z )"
+        LATEST_DEB_URL="$(curl -sL "https://packages.$DEB_DISTRO_URL/$DEB_RELEASE/$DEB_ARCH/$DEB_NAME/download" | grep "<li>*..*$DEB_ARCH.deb" | cut -f2 -d'"' | head -n 1  | sed "s?^[a-zA-Z:]\+//??" - | sed "s?^[a-zA-Z0-9.]\+/$LOWER_DEB_DISTRO/?$D2A_MIRRORURL?" - )"
+        # echo $D2A_MIRRORURL
+        echo $LATEST_DEB_URL
+        curl -sL "$LATEST_DEB_URL" -o "$HOME"/.cache/deb2appimage/debs/"$DEB_NAME".deb || d2aexit 3 "$DEB_NAME.deb" "URL: $LATEST_DEB_URL"
+    else
+        LATEST_DEB_URL="$(curl -sL "https://packages.$DEB_DISTRO_URL/$DEB_RELEASE/$DEB_ARCH/$DEB_NAME/download" | grep "<li>*..*$DEB_ARCH.deb" | cut -f2 -d'"' | head -n 1)"
+        curl -sL "$LATEST_DEB_URL" -o "$HOME"/.cache/deb2appimage/debs/"$DEB_NAME".deb || d2aexit 3 "$DEB_NAME.deb" "URL: $LATEST_DEB_URL"
+    fi
 }
 
 # function that uses jq to get package's deps from build.json
@@ -294,7 +302,7 @@ function buildappimage() {
 }
 
 function d2ahelp() {
-printf '%s\n' "deb2appimage 0.0.5
+printf '%s\n' "deb2appimage 0.0.6
 Usage deb2appimage [argument] [input]
 
 deb2appimage is a tool for creating AppImages using deb packages. json files are used
@@ -307,6 +315,7 @@ Arguments:
 --help, -h       Show this output and exit
 --json, -j       Specify the location of the json file for building the AppImage (required)
 --output, -o     Specify the output directory of the AppImage (optional; $HOME will be used by default)
+--mirror, -m     Specify the mirror url for download deb file (optional; )
 --quiet, -q      Enable quiet mode
 --debug          Enable debug mode
 
@@ -317,6 +326,7 @@ deb2appimage -j $HOME/my-app.json
 deb2appimage -j $HOME/my-app.json -o $HOME/AppImages
 deb2appimage -j $HOME/my-app.json -o $HOME/AppImages -q
 deb2appimage -j $HOME/my-app.json -o $HOME/AppImages --debug
+deb2appimage -j $HOME/my-app.json -m https://mirrors.huaweicloud.com/ubuntu
 "
 }
 
@@ -338,6 +348,13 @@ while [[ $# -gt 0 ]]; do
         -o|--output)
             shift
             D2A_OUTPUT="$(readlink -f $1)"
+            shift
+            ;;
+        # set mirror url (optional)
+        -m|--mirror)
+            shift
+            D2A_MIRRORURL="$1"
+            D2A_MIRROR="TRUE"
             shift
             ;;
         # turn on quiet mode
@@ -374,7 +391,7 @@ fi
 
 # check required inputs
 if [[ -z "$D2A_JSON" ]]; then
-    d2ahelp 
+    d2ahelp
     d2aexit 2 "Missing required --json input"
 fi
 # make sure json input is valid
