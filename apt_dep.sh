@@ -28,7 +28,7 @@ function is_check()
 function get_dep()
 {
    PACKAGE_NAME="$1"
-   DEPS_NAME="$(apt-cache depends "$PACKAGE_NAME" | grep " 依赖:" | awk -F ":" '{ print $2}' | tr -d '<>' | tr '\n' ' ')"
+   DEPS_NAME="$(apt-cache depends "$PACKAGE_NAME" | grep " Depends: " | awk -F ":" '{ print $2}' | tr -d '<>' | tr '\n' ' ')"
    # echo "$1, ${DEPS_NAME}"
    for item_two in ${DEPS_NAME}; 
    do
@@ -40,5 +40,6 @@ function get_dep()
    done;
 }
 
+export LC_ALL="C"
 get_dep $1
 echo ${CHECKED_DEBS}
